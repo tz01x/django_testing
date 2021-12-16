@@ -5,7 +5,7 @@
         <div class="card shadow mb-4">
           <div class="card-body">
             <div class="form-group">
-              <label for="">Product Name</label>
+              <label for="">Product Name </label>
               <input
                 type="text"
                 v-model="product_name"
@@ -78,10 +78,12 @@
               <div class="col-md-4">
                 <div class="form-group">
                   <label for="">Option</label>
-                  <select v-model="item.option" class="form-control">
-                    <option v-for="variant in variants" :value="variant.id">
+                  <select v-model="item.option" class="form-control" >
+                    
+                    <option v-for="variant in variants" :value="variant.id" :selected="variant.id === item.option"  >
                       {{ variant.title }}
                     </option>
+
                   </select>
                 </div>
               </div>
@@ -99,7 +101,6 @@
                   >
                   <label v-else for="">.</label>
                   <input-tag
-
                     v-model="item.tags"
                     @input="checkVariant()"
                     class="form-control"
@@ -180,6 +181,10 @@ export default {
       type: Array,
       required: true,
     },
+    pk: {
+      type: Number,
+      required: true,
+    },
   },
   data() {
     return {
@@ -190,7 +195,7 @@ export default {
       product_variant: [
         {
           option: this.variants[0].id,
-          tags: ['red','blue'],
+          tags: [],
         },
       ],
       product_variant_prices: [],
@@ -203,8 +208,8 @@ export default {
     };
   },
   methods: {
-     //after dropzone file upload it shoud push it to images array 
-    afterComplete(file){
+    //after dropzone file upload it shoud push it to images array
+    afterComplete(file) {
       this.images.push(file);
     },
     // it will push a new object into product variant
@@ -214,7 +219,7 @@ export default {
       let available_variants = all_variants.filter(
         (entry1) => !selected_variants.some((entry2) => entry1 == entry2)
       );
-      console.log(this.product_variant)
+      console.log(this.product_variant);
 
       this.product_variant.push({
         option: available_variants[0],
@@ -224,8 +229,6 @@ export default {
 
     // check the variant and render all the combination
     checkVariant() {
-    
-      
       let tags = [];
       this.product_variant_prices = [];
       this.product_variant.filter((item) => {
@@ -238,7 +241,7 @@ export default {
           price: 0,
           stock: 0,
         });
-      });      
+      });
     },
 
     // combination algorithm
@@ -263,52 +266,72 @@ export default {
         product_variant: this.product_variant,
         product_variant_prices: this.product_variant_prices,
       };
-      const csrftoken = Cookies.get('csrftoken');
+      const csrftoken = Cookies.get("csrftoken");
       var fd = new FormData();
-      fd.append('DO','CREATE');
+      
 
-      this.images.map((_,idx)=>{
-        fd.append('image'+idx,this.images[idx]);
-      })
+
+      this.images.map((_, idx) => {
+        fd.append("image" + idx, this.images[idx]);
+      });
 
       axios({
-        method:'post',
-        url:'/product/api/create/',
-        data:JSON.stringify(product),
-        headers:{
-           "content-type": `application/json`,
-            "X-CSRFToken": csrftoken,
-        }
-      }).then((res)=>{
-
-        fd.append('pk',res.data.pk);
+        method: "post",
+        url: "/product/api/update/"+this.pk+"/",
+        data: JSON.stringify(product),
+        headers: {
+          "content-type": `application/json`,
+          "X-CSRFToken": csrftoken,
+        },
+      }).then((res) => {
+        fd.append("pk", res.data.pk);
 
         axios({
-          method:'post',
-          url:'/product/uploadimages/',
-          data:fd,
-          headers:{
-           "content-type": `multipart/form-data; boundary=${fd._boundary}`,
+          method: "post",
+          url: "/product/uploadimages/",
+          data: fd,
+          headers: {
+            "content-type": `multipart/form-data; boundary=${fd._boundary}`,
             "X-CSRFToken": csrftoken,
-          }
-        }).then(res=>{
+          },
+        }).then((res) => {
           console.log(res);
-          if(res.statusText=="OK"){
-            alert('Product is created');
-            window.location.href="/"
+          if (res.statusText == "OK") {
+            alert("Product is updated");
+            window.location.href = "/product/list/";
           }
-          
-        })
+        });
+      });
 
-
-        
-      })
-     
       console.log(product);
+    },
+    inital_value() {
+      axios({
+        url: "/product/api/get/" + this.pk + "/",
+        method: "GET",
+      })
+        .then((res) => {
+          console.log(res);
+          if (res.statusText == "OK") {
+            return res.data;
+          }
+        })
+        .then((data) => {
+      
+          this.product_name = data.product_name;
+          this.product_sku = data.product_sku;
+          this.description = data.description;
+          this.product_variant = data.product_variant;
+          this.product_variant_prices = data.product_variant_prices;
+
+          console.log(data.product_variant_prices)
+        });
     },
   },
   mounted() {
     console.log("Component mounted.");
+    this.inital_value();
   },
+  beforeMount() {},
 };
 </script>

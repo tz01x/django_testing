@@ -1,5 +1,5 @@
 {% extends 'backend/base.html' %}
-
+{% load product_tags %}
 {% block title %} Product List {% endblock %}
 
 {% block content %}
@@ -18,6 +18,14 @@
             <div class="col-md-2">
                 <select name="variant" id="" class="form-control">
                     <option selected disabled>--Select A Variant--</option>
+                    <!-- {{variant_grp}} -->
+                    {%for key,vals in variant_grp.items%}
+                    <optgroup label="{{key}}">
+                        {%for val in vals%}
+                        <option value="{{val}}">{{val}}</option>                        
+                        {%endfor%}
+                    </optgroup>
+                    {%endfor%}
 
                 </select>
             </div>
@@ -33,7 +41,7 @@
                 </div>
             </div>
             <div class="col-md-2">
-                <input type="date" name="date" placeholder="Date" class="form-control">
+                <input type="date" name="date"  placeholder="Date" class="form-control">
             </div>
             <div class="col-md-1">
                 <button type="submit" class="btn btn-primary float-right"><i class="fa fa-search"></i></button>
@@ -55,32 +63,47 @@
                 </thead>
 
                 <tbody>
+                {%for object in object_list%}
                 <tr>
-                    <td>1</td>
-                    <td>T-Shirt <br> Created at : 25-Aug-2020</td>
-                    <td>Quality product in low cost</td>
+                    <td>{{object.id}}</td>
+                    <td class="" style="width: 15%;">{{object.title}} <br> Created at : {{object.created_at|timesince}}</td>
+                    <td style="width: 30%;">{{object.description}}</td>
                     <td>
-                        <dl class="row mb-0" style="height: 80px; overflow: hidden" id="variant">
+                       
+                        {%with product_varients_and_price=object.productvariantprice_set.all%}
+                        <dl class="row mb-0" style="height: 80px; overflow: hidden" id="variant{{object.id}}">
 
-                            <dt class="col-sm-3 pb-0">
-                                SM/ Red/ V-Nick
+                            <dt class="col-sm-4 pb-0">
+                                {%for obj  in product_varients_and_price%}
+                                <div class="mb-2 ">
+                                    {{obj}}
+                                </div>
+                                {%endfor%}
+                                
+                                
                             </dt>
-                            <dd class="col-sm-9">
-                                <dl class="row mb-0">
-                                    <dt class="col-sm-4 pb-0">Price : 200.0</dt>
-                                    <dd class="col-sm-8 pb-0">InStock : 50.</dd>
+                            <dd class="col-sm-8">
+                                {%for obj  in product_varients_and_price%}
+                                <dl class="row mb-2">
+                                    <dt class="col-sm-4 pb-0">Price : {{obj.price}}</dt>
+                                    <dd class="col-sm-8 pb-0">InStock : {{obj.stock}}</dd>
                                 </dl>
+                                {%endfor%}
+                                
+
                             </dd>
                         </dl>
-                        <button onclick="$('#variant').toggleClass('h-auto')" class="btn btn-sm btn-link">Show more
+                        {%endwith%}
+                        <button onclick="$('#variant{{object.id}}').toggleClass('h-auto')" class="btn btn-sm btn-link">Show more
                         </button>
                     </td>
                     <td>
                         <div class="btn-group btn-group-sm">
-                            <a href="" class="btn btn-success">Edit</a>
+                            <a href="{%url 'product:update.product' pk=object.id%}" class="btn btn-success">Edit</a>
                         </div>
                     </td>
                 </tr>
+                {%endfor%}
                 </tbody>
 
             </table>
@@ -91,9 +114,50 @@
     <div class="card-footer">
         <div class="row justify-content-between">
             <div class="col-md-6">
-                <p>Showing 1 to 10 out of 100</p>
+                <p>Showing {{page_obj.start_index}} to {{page_obj.end_index}} out of {{page_obj.paginator.count}}</p>
+                
             </div>
-            <div class="col-md-2">
+            <div class="col-md-4">
+
+ 
+            
+            
+
+              {% if is_paginated %}
+              <nav aria-label="Page navigation "></nav>
+              <ul class="pagination justify-content-end ">
+                  {% if page_obj.has_previous %}
+                  <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}" tabindex="-1">&laquo;</a></li>
+                  {% else %}
+                  <li class="page-item disabled"><span class="page-link" >&laquo;</span></li>
+                  {% endif %}
+
+                  {% get_proper_elided_page_range paginator page_obj.number as page_range %}
+
+                  {% for i in page_range %}
+                  {% if page_obj.number == i %}
+                  <li class="page-item active"><span class="page-link">{{ i }} <span class="sr-only"></span> </span></li>
+                  {% else %}
+                    {% if i == paginator.ELLIPSIS %}
+                    <li class="page-item"><a class="page-link" >{{ paginator.ELLIPSIS }}</a></li>
+                    {%else%}
+                    <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+
+                    {%endif%}
+                  {% endif %}
+                  {% endfor %}
+                  {% if page_obj.has_next %}
+                  <li  class="page-item"><a class="page-link"href="?page={{ page_obj.next_page_number }}">&raquo;</a></li>
+                  {% else %}
+                  <li class="page-item disabled"><a class="page-link">&raquo;</a></li>
+                  {% endif %}
+              </ul>
+          </nav>
+              {% endif %}
+
+
+
+           
 
             </div>
         </div>

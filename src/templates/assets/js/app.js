@@ -5,7 +5,9 @@ import Vue from 'vue';
 window.Vue = Vue
 
 Vue.component('create-product', require('./components/product/CreateProduct.vue').default)
+Vue.component('update-product', require('./components/product/updateProduct.vue').default)
 
 const app = new Vue({
     el: '#app'
 })
+
